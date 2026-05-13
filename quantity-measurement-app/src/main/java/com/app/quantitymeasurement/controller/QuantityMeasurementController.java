@@ -40,6 +40,11 @@ public class QuantityMeasurementController {
         return service.subtract(dto);
     }
 
+    @GetMapping("/hello")
+    public String hello() {
+        return "Hi from Jenkins CI/CD Deployment!";
+    }
+
     @GetMapping("/all")
     public List<QuantityResponseDTO> getAll() {
         return service.getAll();
