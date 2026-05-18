@@ -13,7 +13,7 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 git branch: 'docker-cicd',
-                git 'https://github.com/Utkarsh-37/QuantityMeasurementAppSpringBoot.git'
+                url: 'https://github.com/Utkarsh-37/QuantityMeasurementAppSpringBoot.git'
             }
         }
 
@@ -63,7 +63,7 @@ pipeline {
                 cd ~/QuantityMeasurementAppSpringBoot/quantity-measurement-app
 
                 docker compose pull
-                docker compose up -d
+                docker compose up -d --force-recreate
 
 EOF
                 '''
