@@ -1,53 +1,71 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_ACCOUNT_ID = '592992781575'
+        AWS_REGION = 'ap-south-1'
+        IMAGE_NAME = 'quantitymeasurement-backend'
+        ECR_URI = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${IMAGE_NAME}"
+    }
+
     stages {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'dev',
-                url: 'https://github.com/Utkarsh-37/QuantityMeasurementAppSpringBoot.git'
+                git branch: 'docker-cicd'
+                git 'https://github.com/Utkarsh-37/QuantityMeasurementAppSpringBoot.git'
             }
         }
 
-        stage('Build Artifact') {
+        stage('Build Docker Image') {
             steps {
-                sh '''
-                    cd quantity-measurement-app
-
-                    pwd
-                    ls -la
-
-                    mvn clean package -DskipTests
-                '''
+                dir('quantitymeasurement') {
+                    sh 'docker build -t quantitymeasurement-backend:latest .'
+                }
             }
         }
 
-        stage('Deploy To Backend Server') {
+        stage('Login to ECR') {
             steps {
-                sh '''
-                    cd quantity-measurement-app
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-ecr-creds'
+                ]]) {
 
-                    scp target/quantity-measurement-app-0.0.1-SNAPSHOT.jar \
-                    ubuntu@172.31.42.204:/app/quantity-measurement-app/target
-                '''
+                    sh '''
+                    aws ecr get-login-password --region ap-south-1 | \
+                    docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    '''
+                }
             }
         }
 
-        stage('Restart Application') {
+        stage('Tag Image') {
             steps {
-                sh '''
-                    ssh ubuntu@172.31.42.204 \
-                    "sudo systemctl restart quantityapp.service"
-                '''
+                sh 'docker tag quantitymeasurement-backend:latest ${ECR_URI}:latest'
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Push Image') {
+            steps {
+                sh 'docker push ${ECR_URI}:latest'
+            }
+        }
+
+        stage('Deploy to Application EC2') {
             steps {
                 sh '''
-                    ssh ubuntu@172.31.42.204 \
-                    "sudo systemctl status quantityapp.service --no-pager"
+                ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/mykey.pem ubuntu@52.66.196.162 << EOF
+
+                aws ecr get-login-password --region ap-south-1 | \
+                docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+
+                cd ~/QuantityMeasurementAppSpringBoot/quantity-measurement-app
+
+                docker compose pull
+                docker compose up -d
+
+EOF
                 '''
             }
         }
