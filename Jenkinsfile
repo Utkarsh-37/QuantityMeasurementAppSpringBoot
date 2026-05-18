@@ -12,7 +12,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'docker-cicd'
+                git branch: 'docker-cicd',
                 git 'https://github.com/Utkarsh-37/QuantityMeasurementAppSpringBoot.git'
             }
         }
