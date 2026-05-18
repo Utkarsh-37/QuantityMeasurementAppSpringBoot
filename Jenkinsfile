@@ -19,7 +19,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                dir('quantitymeasurement') {
+                dir('quantity-measurement-app') {
                     sh 'docker build -t quantitymeasurement-backend:latest .'
                 }
             }
