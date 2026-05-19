@@ -55,7 +55,7 @@ pipeline {
         stage('Deploy to Application EC2') {
             steps {
                 sh '''
-                ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/mykey.pem ubuntu@52.66.196.162 << EOF
+                ssh -o StrictHostKeyChecking=no -i /var/lib/jenkins/.ssh/mykey.pem ubuntu@172.31.36.244 << EOF
 
                 aws ecr get-login-password --region ap-south-1 | \
                 docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
